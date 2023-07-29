@@ -1,7 +1,8 @@
 const std = @import("std");
 const jent = @import("main.zig");
-const rct = @import("health/rct.zig");
-const apt = @import("health/apt.zig");
+
+pub const rct = @import("health/rct.zig");
+pub const apt = @import("health/apt.zig");
 
 pub const Failure = packed struct {
     /// Failure in RCT health test

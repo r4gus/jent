@@ -77,5 +77,5 @@ pub fn stuckTest(ec: *jent.RandData, current_delta: u64) !void {
     }
 
     // RCT with a non-stuck bit
-    insert(ec, 0);
+    insert(ec, false);
 }

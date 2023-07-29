@@ -70,7 +70,7 @@ pub fn insert(ec: *jent.RandData, current_delta: u64) void {
         ec.health.apt_count += 1; // B = B + 1
 
         // Note: ec.health.apt_count starts with one
-        if (ec.health.apt_count >= ec.healt.apt_cutoff) {
+        if (ec.health.apt_count >= ec.health.apt_cutoff) {
             ec.health.health_failure.apt = true;
         }
     }
