@@ -99,7 +99,7 @@ fn hashTime(ec: *jent.RandData, time: u64, loop_cnt: u64, stuck: bool) void {
 /// # Returns
 ///
 /// The current delta on success, `Error` otherwise.
-pub fn measureJitter(ec: *jent.RandData, loop_cnt: u64) !u64 {
+pub fn measureJitter(ec: *jent.RandData, loop_cnt: u64, out_delta: ?*u64) !void {
     var time: u64 = 0;
     var current_delta: u64 = 0;
     var stuck_err: ?jent.Error = null;
@@ -120,10 +120,12 @@ pub fn measureJitter(ec: *jent.RandData, loop_cnt: u64) !u64 {
     // Now call the next noise sources which also injects the data
     jent.noise.hashTime(ec, current_delta, loop_cnt, stuck);
 
+    if (out_delta) |o| {
+        o.* = current_delta;
+    }
+
     if (stuck) {
         return stuck_err.?;
-    } else {
-        return current_delta;
     }
 }
 

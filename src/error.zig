@@ -22,6 +22,10 @@ pub const Error = error{
     Health,
     /// RCT failed during initialization
     Rct,
+    /// APT test failed during initialization
+    Apt,
+    /// Lag test failed during initialization
+    Lag,
     /// Hash self test failed
     Hash,
     /// Can't allocate memory

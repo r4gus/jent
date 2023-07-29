@@ -3,7 +3,7 @@ const std = @import("std");
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -28,6 +28,23 @@ pub fn build(b: *std.Build) void {
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
     b.installArtifact(lib);
+
+    const jent_module = b.addModule("jent", .{
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .source_file = .{ .path = "src/main.zig" },
+    });
+    try b.modules.put(b.dupe("jent"), jent_module);
+
+    const exe = b.addExecutable(.{
+        .name = "jent-example",
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .root_source_file = .{ .path = "example/main.zig" },
+        .target = target,
+    });
+    exe.addModule("jent", jent_module);
+    b.installArtifact(exe);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.

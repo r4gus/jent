@@ -15,6 +15,7 @@ pub const gcd = @import("gcd.zig");
 pub const health = @import("health.zig");
 pub const timer = @import("timer.zig");
 pub const noise = @import("noise.zig");
+pub const base = @import("base.zig");
 pub const base_user = @import("base-user.zig");
 
 /// The output 256 bits can receive more than 256 bits of min entropy,
@@ -101,7 +102,7 @@ pub const RandData = struct {
         }
 
         // Priming of the self.prev_time value
-        _ = noise.measureJitter(self, 0) catch {
+        noise.measureJitter(self, 0, null) catch {
             // TODO: handle this somehow ???
         };
 
@@ -113,7 +114,7 @@ pub const RandData = struct {
             }
 
             // If a stuck measurement is received, repeat measurement
-            _ = noise.measureJitter(self, 0) catch {
+            noise.measureJitter(self, 0, null) catch {
                 continue;
             };
 
@@ -126,15 +127,90 @@ pub const RandData = struct {
         }
     }
 
-    pub fn block(self: *@This(), out: *[Sha.digest_length]u8) void {
+    pub fn block(self: *@This(), out: ?[]u8) void {
         var jent_block: [Sha.digest_length]u8 = undefined;
         self.hash_state.final(jent_block[0..]);
-        @memcpy(out[0..], jent_block[0..]);
+        if (out) |_out| {
+            @memcpy(_out[0..Sha.digest_length], jent_block[0..]);
+        }
 
         // Stir the new state with the data from the old state - the digest
         // of the old data is not considered to have entropy
         self.hash_state.update(jent_block[0..]);
         @memset(jent_block[0..], 0);
+    }
+
+    pub fn bytes(self: *@This(), out: []u8) !void {
+        var len: usize = out.len;
+        var i: usize = 0;
+
+        while (len > 0) {
+            self.randomData();
+
+            if (health.checkHealth(self)) |failure| {
+                if (failure.rct) {
+                    return Error.Rct;
+                } else if (failure.apt) {
+                    return Error.Apt;
+                } else {
+                    return Error.Lag;
+                }
+            }
+
+            const tocopy = if (Sha.digest_length < len)
+                Sha.digest_length
+            else
+                len;
+
+            self.block(out[i .. i + tocopy]);
+
+            len -= tocopy;
+            i += tocopy;
+        }
+
+        // Enhanced backtracking support: At this point, the hash state
+        // contains the digest of the previous Jitter RNG collection round
+        // which is inserted there by jent_read_random_block with the SHA
+        // update operation. At the current code location we completed
+        // one request for a caller and we do not know how long it will
+        // take until a new request is sent to us. To guarantee enhanced
+        // backtracking resistance at this point (i.e. ensure that an attacker
+        // cannot obtain information about prior random numbers we generated),
+        // but still stirring the hash state with old data the Jitter RNG
+        // obtains a new message digest from its state and re-inserts it.
+        // After this operation, the Jitter RNG state is still stirred with
+        // the old data, but an attacker who gets access to the memory after
+        // this point cannot deduce the random numbers produced by the
+        // Jitter RNG prior to this point.
+        self.block(null);
+    }
+
+    pub fn init(fips_enabled: bool) !@This() {
+        var ec = @This(){};
+        ec.health.fips_enabled = fips_enabled;
+
+        // Run self tests -------------------------------
+        try base.entropyInitCommonPre();
+        try base.timeEntropyInit(&ec);
+
+        // Initialize entropy collector -----------------
+
+        // Initialize the apt
+        health.apt.init(&ec, ec.osr);
+
+        //  Was jent_entropy_init run (establishing the common GCD)?
+        if (gcd.DeltaHistory.get()) |v| {
+            ec.common_timer_gcd = v;
+        } else {
+            // It was not. This should probably be an error, but this
+            // behavior breaks the test code. Set the gcd to a value that
+            // won't hurt anything.
+            ec.common_timer_gcd = 1;
+        }
+
+        ec.randomData();
+
+        return ec;
     }
 };
 
@@ -147,14 +223,6 @@ test "main tests" {
 }
 
 test "lol" {
-    var rd = RandData{};
-    rd.randomData();
-
-    var buffer: [Sha.digest_length]u8 = undefined;
-
-    var i: usize = 0;
-    while (i < 16) : (i += 1) {
-        rd.block(&buffer);
-        std.debug.print("{s}\n", .{std.fmt.fmtSliceHexUpper(buffer[0..])});
-    }
+    //var ec = try RandData.init();
+    //_ = ec;
 }
