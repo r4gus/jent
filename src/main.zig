@@ -189,10 +189,6 @@ pub const RandData = struct {
         var ec = @This(){};
         ec.health.fips_enabled = fips_enabled;
 
-        // Run self tests -------------------------------
-        try base.entropyInitCommonPre();
-        try base.timeEntropyInit(&ec);
-
         // Initialize entropy collector -----------------
 
         // Initialize the apt
@@ -209,6 +205,12 @@ pub const RandData = struct {
         }
 
         ec.randomData();
+
+        // Run self tests -------------------------------
+        // The self-tests depend on the ec to be initialized correctly,
+        // e.g., the APT cutoff being set.
+        try base.entropyInitCommonPre();
+        try base.timeEntropyInit(&ec);
 
         return ec;
     }

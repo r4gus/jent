@@ -2,6 +2,7 @@
 //!
 //! This test complies with SP800-90B section 4.4.2.
 
+const std = @import("std");
 const jent = @import("../main.zig");
 
 const apt_window_size = 512;
@@ -69,8 +70,11 @@ pub fn insert(ec: *jent.RandData, current_delta: u64) void {
     if (current_delta == ec.health.apt_base) {
         ec.health.apt_count += 1; // B = B + 1
 
+        //std.debug.print("delta = {}, observations = {d}, count = {d}\n", .{ current_delta, ec.health.apt_observations, ec.health.apt_count });
+
         // Note: ec.health.apt_count starts with one
         if (ec.health.apt_count >= ec.health.apt_cutoff) {
+            //std.debug.print("apt failure: delta = {}, observations = {d}, count = {d}\n", .{ current_delta, ec.health.apt_observations, ec.health.apt_count });
             ec.health.health_failure.apt = true;
         }
     }
