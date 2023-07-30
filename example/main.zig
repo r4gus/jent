@@ -4,7 +4,20 @@ const jent = @import("jent");
 const iterations = 1000;
 
 pub fn main() !void {
-    var ec = try jent.RandData.init(true, null);
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var allocator = gpa.allocator();
+
+    var mem = jent.Memory{
+        .ptr = try allocator.alloc(u8, 4096 * 256),
+        .blocks = 256,
+        .block_size = 4096,
+    };
+    defer allocator.free(mem.ptr);
+
+    var ec = try jent.RandData.init(
+        true,
+        mem,
+    );
 
     var x: [1024]u8 = undefined;
     var y: [256]usize = .{0} ** 256;
