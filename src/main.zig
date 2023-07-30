@@ -121,7 +121,7 @@ pub const RandData = struct {
             // We multiply the loop value with self.osr to obtain the
             // oversampling rate requested by the caller
             k += 1;
-            if (k >= ((DATA_SIZE_BITS * safety_factor) * self.osr)) {
+            if (k >= ((DATA_SIZE_BITS + safety_factor) * self.osr)) {
                 break;
             }
         }

@@ -1,7 +1,7 @@
 const std = @import("std");
 const jent = @import("jent");
 
-const iterations = 10;
+const iterations = 1000;
 
 pub fn main() !void {
     var ec = try jent.RandData.init(true);
