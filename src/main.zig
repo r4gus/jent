@@ -33,6 +33,21 @@ pub const ENTROPY_SAFETY_FACTOR = 64;
 
 pub const DATA_SIZE_BITS = Sha.digest_length * 8;
 
+/// A user allocated chunk of memory with some stats
+pub const Memory = struct {
+    /// Allocated memory slice to introduce uncertanty
+    /// through memory access.
+    ptr: []u8,
+    /// Number of memory accesses per random bit generation
+    access_loops: u64 = 128,
+    /// Index to byte in ptr
+    location: usize = 0,
+    /// Number of memory blocks
+    blocks: usize = 2,
+    /// Size of one memory block in bytes
+    block_size: usize = 1024,
+};
+
 /// The entropy pool
 pub const RandData = struct {
     /// Hash state entropy pool
@@ -46,6 +61,9 @@ pub const RandData = struct {
     } = .{},
     /// Oversampling rate
     osr: usize = 1,
+
+    /// Data structure for memory access
+    mem: ?Memory = null,
 
     /// Stuck test
     stuck_test: struct {
@@ -185,9 +203,10 @@ pub const RandData = struct {
         self.block(null);
     }
 
-    pub fn init(fips_enabled: bool) !@This() {
+    pub fn init(fips_enabled: bool, mem: ?Memory) !@This() {
         var ec = @This(){};
         ec.health.fips_enabled = fips_enabled;
+        ec.mem = mem;
 
         // Initialize entropy collector -----------------
 

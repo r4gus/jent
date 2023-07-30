@@ -4,7 +4,7 @@ const jent = @import("jent");
 const iterations = 1000;
 
 pub fn main() !void {
-    var ec = try jent.RandData.init(true);
+    var ec = try jent.RandData.init(true, null);
 
     var x: [1024]u8 = undefined;
     var y: [256]usize = .{0} ** 256;

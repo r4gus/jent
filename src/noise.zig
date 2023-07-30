@@ -77,7 +77,34 @@ fn hashTime(ec: *jent.RandData, time: u64, loop_cnt: u64, stuck: bool) void {
 // Mem Access
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-// TODO: mem access
+/// Memory Access noise source -- this is a noise source based on variations in memory access times
+pub fn memAccess(ec: *jent.RandData, loop_cnt: u64) void {
+    const MAX_ACC_LOOP_BIT = 7;
+    const MIN_ACC_LOOP_BIT = 0;
+
+    var acc_loop_cnt = loopShuffle(ec, MAX_ACC_LOOP_BIT, MIN_ACC_LOOP_BIT);
+
+    if (ec.mem == null) {
+        return;
+    }
+    const wrap = ec.mem.?.block_size * ec.mem.?.blocks;
+
+    if (loop_cnt > 0) acc_loop_cnt = loop_cnt;
+
+    var i: usize = 0;
+    while (i < (ec.mem.?.access_loops + acc_loop_cnt)) : (i += 1) {
+        const tmpval = &ec.mem.?.ptr[ec.mem.?.location];
+
+        // memory access: just add 1 to one byte.
+        // -- implies read from and write to memory location.
+        tmpval.* = @addWithOverflow(tmpval.*, 1)[0];
+
+        // Addition of memblocksize - 1 to pointer with wrap around
+        // to ensure that every memory location is hit evenly.
+        ec.mem.?.location = ec.mem.?.location + ec.mem.?.block_size - 1;
+        ec.mem.?.location = ec.mem.?.location % wrap;
+    }
+}
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Entropy Processing
@@ -104,6 +131,9 @@ pub fn measureJitter(ec: *jent.RandData, loop_cnt: u64, out_delta: ?*u64) !void 
     var current_delta: u64 = 0;
     var stuck_err: ?jent.Error = null;
     var stuck: bool = false;
+
+    // Invoke one noise source before time measurement to add variation
+    memAccess(ec, loop_cnt);
 
     // Get time stamp and calculate time delta to previous
     // invocation to measure the timing variations
