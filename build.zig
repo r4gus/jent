@@ -36,6 +36,10 @@ pub fn build(b: *std.Build) !void {
     });
     try b.modules.put(b.dupe("jent"), jent_module);
 
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // Examples
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     const exe = b.addExecutable(.{
         .name = "jent-example",
         // In this case the main source file is merely a path, however, in more
@@ -45,6 +49,16 @@ pub fn build(b: *std.Build) !void {
     });
     exe.addModule("jent", jent_module);
     b.installArtifact(exe);
+
+    const exe2 = b.addExecutable(.{
+        .name = "random",
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .root_source_file = .{ .path = "example/random.zig" },
+        .target = target,
+    });
+    exe2.addModule("jent", jent_module);
+    b.installArtifact(exe2);
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // Tests

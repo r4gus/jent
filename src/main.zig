@@ -7,6 +7,7 @@
 //! SHA-3 hashing operations as well as memory accesses.
 
 const std = @import("std");
+const Random = std.rand.Random;
 const testing = std.testing;
 
 pub const Sha = std.crypto.hash.sha3.Sha3_256;
@@ -149,7 +150,7 @@ pub const RandData = struct {
         var jent_block: [Sha.digest_length]u8 = undefined;
         self.hash_state.final(jent_block[0..]);
         if (out) |_out| {
-            @memcpy(_out[0..Sha.digest_length], jent_block[0..]);
+            @memcpy(_out[0..], jent_block[0.._out.len]);
         }
 
         // Stir the new state with the data from the old state - the digest
@@ -203,10 +204,11 @@ pub const RandData = struct {
         self.block(null);
     }
 
-    pub fn init(fips_enabled: bool, mem: ?Memory) !@This() {
+    pub fn init(fips_enabled: bool, time: *const fn () u64, mem: ?Memory) !@This() {
         var ec = @This(){};
         ec.health.fips_enabled = fips_enabled;
         ec.mem = mem;
+        ec.callbacks.getNsTime = time;
 
         // Initialize entropy collector -----------------
 
@@ -234,6 +236,71 @@ pub const RandData = struct {
         return ec;
     }
 };
+
+pub fn Jent(comptime time: fn () u64, comptime blocks: usize, comptime block_size: usize) type {
+    return struct {
+        state: RandData,
+        mem: [blocks * block_size]u8,
+
+        pub fn init() !@This() {
+            var new = @This(){
+                .state = undefined,
+                .mem = undefined,
+            };
+
+            new.state = try RandData.init(
+                true,
+                time,
+                Memory{
+                    .ptr = new.mem[0..],
+                    .blocks = blocks,
+                    .block_size = block_size,
+                },
+            );
+
+            return new;
+        }
+
+        pub fn random(self: *@This()) Random {
+            return Random.init(self, fill);
+        }
+
+        pub fn fill(self: *@This(), out: []u8) void {
+            var len: usize = out.len;
+            var i: usize = 0;
+
+            while (len > 0) {
+                self.state.randomData();
+
+                const tocopy = if (Sha.digest_length < len)
+                    Sha.digest_length
+                else
+                    len;
+
+                self.state.block(out[i .. i + tocopy]);
+
+                len -= tocopy;
+                i += tocopy;
+            }
+
+            // Enhanced backtracking support: At this point, the hash state
+            // contains the digest of the previous Jitter RNG collection round
+            // which is inserted there by jent_read_random_block with the SHA
+            // update operation. At the current code location we completed
+            // one request for a caller and we do not know how long it will
+            // take until a new request is sent to us. To guarantee enhanced
+            // backtracking resistance at this point (i.e. ensure that an attacker
+            // cannot obtain information about prior random numbers we generated),
+            // but still stirring the hash state with old data the Jitter RNG
+            // obtains a new message digest from its state and re-inserts it.
+            // After this operation, the Jitter RNG state is still stirred with
+            // the old data, but an attacker who gets access to the memory after
+            // this point cannot deduce the random numbers produced by the
+            // Jitter RNG prior to this point.
+            self.state.block(null);
+        }
+    };
+}
 
 test "main tests" {
     _ = gcd;

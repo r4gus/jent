@@ -23,7 +23,7 @@ fn oneTest(pathname: []const u8, rounds: usize, report_counter_ticks: usize) !vo
         .block_size = 4096,
     };
     defer allocator.free(mem1.ptr);
-    var ec = try jent.RandData.init(true, mem1);
+    var ec = try jent.RandData.init(true, jent.base_user.getNsTime, mem1);
 
     var mem2 = jent.Memory{
         .ptr = try allocator.alloc(u8, 4096 * 256),
@@ -31,7 +31,7 @@ fn oneTest(pathname: []const u8, rounds: usize, report_counter_ticks: usize) !vo
         .block_size = 4096,
     };
     defer allocator.free(mem2.ptr);
-    var ec_min = try jent.RandData.init(true, mem2);
+    var ec_min = try jent.RandData.init(true, jent.base_user.getNsTime, mem2);
 
     if (report_counter_ticks < 1) {
         // For this analysis, we want the raw values, not values that

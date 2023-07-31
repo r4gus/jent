@@ -16,6 +16,7 @@ pub fn main() !void {
 
     var ec = try jent.RandData.init(
         true,
+        jent.base_user.getNsTime,
         mem,
     );
 
