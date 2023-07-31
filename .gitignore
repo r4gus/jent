@@ -1,3 +1,9 @@
 zig-cache
 zig-out
 *.swp
+
+# Files generated during tests
+*.data
+*.var.txt
+*.single.txt
+*.log

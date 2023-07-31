@@ -46,6 +46,20 @@ pub fn build(b: *std.Build) !void {
     exe.addModule("jent", jent_module);
     b.installArtifact(exe);
 
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // Tests
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    const hashtime = b.addExecutable(.{
+        .name = "hashtime",
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .root_source_file = .{ .path = "tests/recording_userspace/hashtime.zig" },
+        .target = target,
+    });
+    hashtime.addModule("jent", jent_module);
+    b.installArtifact(hashtime);
+
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const main_tests = b.addTest(.{

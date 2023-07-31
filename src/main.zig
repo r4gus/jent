@@ -60,7 +60,7 @@ pub const RandData = struct {
         disable_memory_access: bool = true,
     } = .{},
     /// Oversampling rate
-    osr: usize = 1,
+    osr: usize = 3,
 
     /// Data structure for memory access
     mem: ?Memory = null,
