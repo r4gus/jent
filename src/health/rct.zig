@@ -22,7 +22,7 @@ const jent = @import("../main.zig");
 fn insert(ec: *jent.RandData, stuck: bool) void {
     // If we have a count less than zero, a previous RCT round identified
     // a failure. We will not overwrite it.
-    if (ec.health.rct_count > 0) return;
+    if (ec.health.rct_count < 0) return;
 
     if (stuck) {
         ec.health.rct_count += 1;

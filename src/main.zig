@@ -272,6 +272,10 @@ pub fn Jent(comptime time: fn () u64, comptime blocks: usize, comptime block_siz
             while (len > 0) {
                 self.state.randomData();
 
+                // TODO: there might occur situations where this
+                // fails but how to handle them if fill doesn't
+                // return a error?
+
                 const tocopy = if (Sha.digest_length < len)
                     Sha.digest_length
                 else
