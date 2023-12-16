@@ -3,7 +3,7 @@
 A hardware Random Number Generator (RNG) based on CPU timing jitter.
 
 This is a rewrite of the [jitterentropy-library](https://github.com/smuellerDD/jitterentropy-library) by 
-[Stephan Mueller (smuellerDD)](https://github.com/smuellerDD) in [Zig](https://ziglang.org/).
+[smuellerDD](https://github.com/smuellerDD) in [Zig](https://ziglang.org/).
 _If you need a RNG you should use the [original](https://github.com/smuellerDD/jitterentropy-library)_.
 
 From the original repository:
