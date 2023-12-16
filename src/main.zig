@@ -107,8 +107,6 @@ pub const RandData = struct {
         /// an action determined by the caller.
         fipsFailure: ?*const fn (ec: *RandData, health_failure: health.Failure) void = null,
         getNsTime: *const fn () u64,
-    } = .{
-        .getNsTime = base_user.getNsTime,
     },
 
     /// Generator of one 256 bit random number
@@ -205,10 +203,11 @@ pub const RandData = struct {
     }
 
     pub fn init(fips_enabled: bool, time: *const fn () u64, mem: ?Memory) !@This() {
-        var ec = @This(){};
-        ec.health.fips_enabled = fips_enabled;
-        ec.mem = mem;
-        ec.callbacks.getNsTime = time;
+        var ec = @This(){
+            .health = .{ .fips_enabled = fips_enabled },
+            .mem = mem,
+            .callbacks = .{ .getNsTime = time },
+        };
 
         // Initialize entropy collector -----------------
 
