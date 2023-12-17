@@ -202,11 +202,19 @@ pub const RandData = struct {
         self.block(null);
     }
 
-    pub fn init(fips_enabled: bool, time: *const fn () u64, mem: ?Memory) !@This() {
+    pub const Options = struct {
+        fips_enabled: bool = true,
+        time: *const fn () u64,
+        mem: ?Memory,
+        osr: usize = 3,
+    };
+
+    pub fn init(options: Options) !@This() {
         var ec = @This(){
-            .health = .{ .fips_enabled = fips_enabled },
-            .mem = mem,
-            .callbacks = .{ .getNsTime = time },
+            .health = .{ .fips_enabled = options.fips_enabled },
+            .mem = options.mem,
+            .callbacks = .{ .getNsTime = options.time },
+            .osr = options.osr,
         };
 
         // Initialize entropy collector -----------------
@@ -236,26 +244,33 @@ pub const RandData = struct {
     }
 };
 
-pub fn Jent(comptime time: fn () u64, comptime blocks: usize, comptime block_size: usize) type {
+pub const JentOptions = struct {
+    blocks: usize = 8,
+    block_size: usize = 1024,
+    osr: usize = 3,
+};
+
+pub fn Jent(comptime time: fn () u64, comptime options: JentOptions) type {
     return struct {
         state: RandData,
-        mem: [blocks * block_size]u8,
+        mem: [options.blocks * options.block_size]u8,
 
-        pub fn init() !@This() {
+        pub fn init(fips_enabled: bool) !@This() {
             var new = @This(){
                 .state = undefined,
                 .mem = undefined,
             };
 
-            new.state = try RandData.init(
-                true,
-                time,
-                Memory{
+            new.state = try RandData.init(.{
+                .fips_enabled = fips_enabled,
+                .time = time,
+                .mem = Memory{
                     .ptr = new.mem[0..],
-                    .blocks = blocks,
-                    .block_size = block_size,
+                    .blocks = options.blocks,
+                    .block_size = options.block_size,
                 },
-            );
+                .osr = options.osr,
+            });
 
             return new;
         }
